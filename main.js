@@ -97,7 +97,6 @@ app.delete('/api/users/:id', (req, res) => {
 });
 
 // 3. 带错误处理的路由
-// 删除Mongoose相关代码，改用内存操作
 app.put('/api/users/:id', upload.single('avatar'), (req, res) => {
     try {
         const id = req.params.id;

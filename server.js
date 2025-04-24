@@ -2,12 +2,49 @@ const express = require('express');
 const cors = require('cors');
 const app = express();
 const path = require('path');
+const multer = require('multer');
 
 // 允许跨域请求
 app.use(cors());
+// 解析JSON请求体
+app.use(express.json()); // 添加此行以解析JSON请求体
+// 然后添加校验中间件
+app.use('/api/products', (req, res, next) => {
+  if (req.method === 'POST') {
+    // 添加空对象兜底
+    const { price } = req.body || {};
+    if (price && isNaN(Number(price))) {
+      return res.status(400).json({ error: '价格格式不正确' });
+    }
+  }
+  next();
+});
 // 新增静态资源中间件
 app.use('/images', express.static(path.join(__dirname, 'images')));
-app.use(express.json());
+// 在所有路由之后添加
+app.use((err, req, res, next) => {
+  console.error('全局错误:', err);
+  res.status(500).json({ error: '服务器内部错误' });
+});
+
+
+// 配置multer存储
+const storage = multer.diskStorage({
+  destination: (req, file, cb) => {
+    cb(null, path.join(__dirname, 'images'))
+  },
+  filename: (req, file, cb) => {
+    cb(null, Date.now() + '-' + file.originalname)
+  }
+});
+
+const upload = multer({
+  storage,
+  fileFilter: (req, file, cb) => {
+    const allowedTypes = ['image/jpeg', 'image/png']
+    cb(null, allowedTypes.includes(file.mimetype))
+  }
+})
 
 // 内存存储的商品数据
 let products = [
@@ -158,6 +195,97 @@ app.get('/api/products', (req, res) => {
   res.json({
     total: filtered.length,
     products: result
+  });
+});
+
+// 新增商品接口（放在商品列表接口之后，启动服务器之前）
+app.post('/api/products', upload.single('image'), (req, res) => { // 添加multer中间件app.post('/api/products', upload.single('image'), (req, res) => {
+  // 合并表单字段和上传文件信息
+  const newProduct = {
+    ...req.body,      // 获取表单文本字段
+    image: req.file ? `/images/${req.file.filename}` : '/images/default.jpg'
+  };
+
+  // 调试日志（可查看完整数据）
+  console.log('[FORM DATA]', {
+    body: req.body,
+    file: req.file
+  });
+
+  // 校验逻辑需要调整（因为表单字段是字符串）
+  if (!newProduct.name || !newProduct.price) {
+    return res.status(400).json({
+      error: `缺少必填字段：${!newProduct.name ? 'name' : 'price'}`
+    });
+  }
+
+  // 类型转换
+  const fullProduct = {
+    id: Math.max(...products.map(p => p.id)) + 1,
+    name: newProduct.name,
+    price: Number(newProduct.price),
+    originalPrice: newProduct.originalPrice ? Number(newProduct.originalPrice) : Math.round(newProduct.price * 1.2),
+    image: newProduct.image,
+    sales: newProduct.sales ? Number(newProduct.sales) : 0,
+    rating: newProduct.rating ? Number(newProduct.rating) : 0,
+    stock: newProduct.stock ? Number(newProduct.stock) : 0,
+    isHot: newProduct.isHot === 'true' // 表单传输的布尔值需要特殊处理
+  };
+
+  products.push(fullProduct);
+  res.status(201).json(fullProduct);
+});
+
+// 更新商品接口
+app.put('/api/products/:id', upload.single('image'), (req, res) => {
+  const productId = Number(req.params.id); // 获取商品ID
+  const updatedData = {
+    ...req.body, // 获取表单字段
+    image: req.file ? `/images/${req.file.filename}` : undefined // 处理上传文件
+  };
+
+  // 查找要更新的商品
+  const productIndex = products.findIndex(p => p.id === productId);
+  if (productIndex === -1) {
+    return res.status(404).json({ error: '商品未找到' });
+  }
+
+  // 更新商品信息
+  const updatedProduct = {
+    ...products[productIndex], // 保留原有字段
+    ...updatedData,            // 覆盖新字段
+    id: productId,             // 确保ID不变
+    price: Number(updatedData.price), // 类型转换
+    originalPrice: updatedData.originalPrice ? Number(updatedData.originalPrice) : undefined,
+    sales: updatedData.sales ? Number(updatedData.sales) : products[productIndex].sales,
+    rating: updatedData.rating ? Number(updatedData.rating) : products[productIndex].rating,
+    stock: updatedData.stock ? Number(updatedData.stock) : products[productIndex].stock,
+    isHot: updatedData.isHot === 'true' // 布尔值处理
+  };
+
+  // 更新内存中的商品数据
+  products[productIndex] = updatedProduct;
+
+  res.status(200).json(updatedProduct);
+});
+
+// 删除商品接口
+app.delete('/api/products/:id', (req, res) => {
+  const productId = Number(req.params.id);
+
+  // 查找商品索引
+  const productIndex = products.findIndex(p => p.id === productId);
+
+  if (productIndex === -1) {
+    return res.status(404).json({ error: '商品不存在' });
+  }
+
+  // 删除商品
+  const [deletedProduct] = products.splice(productIndex, 1);
+
+  res.status(200).json({
+    message: '删除成功',
+    deleted: deletedProduct
   });
 });
 
