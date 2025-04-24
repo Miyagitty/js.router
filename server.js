@@ -10,17 +10,110 @@ app.use('/images', express.static(path.join(__dirname, 'images')));
 app.use(express.json());
 
 // 内存存储的商品数据
-let products = Array(40).fill().map((_, i) => ({
-  id: i + 1,
-  name: `天选${5 + Math.floor(i / 10)}pro`,
-  price: Math.floor(Math.random() * (10000 - 3000) + 3000),
-  originalPrice: Math.floor(Math.random() * (15000 - 5000) + 5000),
-  image: `/images/${(i % 5) + 1}.jpg`,
-  sales: Math.floor(Math.random() * 1000),
-  rating: Number((Math.random() * 3 + 2).toFixed(1)),
-  stock: Math.floor(Math.random() * 50),
-  isHot: Math.random() > 0.7
-}));
+let products = [
+  {
+    id: 1,
+    name: "机械革命无界14",
+    price: 3499,
+    originalPrice: 3799,
+    image: "/images/1.jpg",
+    sales: 856,
+    rating: 4.5,
+    stock: 42,
+    isHot: true
+  },
+  {
+    id: 2,
+    name: "华硕天选5pro",
+    price: 8699,
+    originalPrice: 9999,
+    image: "/images/2.jpg",
+    sales: 723,
+    rating: 4.3,
+    stock: 35,
+    isHot: false
+  },
+  {
+    id: 3,
+    name: "联想拯救者Y9000X",
+    price: 8999,
+    originalPrice: 9999,
+    image: "/images/3.jpg",
+    sales: 921,
+    rating: 4.7,
+    stock: 28,
+    isHot: true
+  },
+  {
+    id: 4,
+    name: "联想小新YOGA14",
+    price: 4499,
+    originalPrice: 4999,
+    image: "/images/4.jpg",
+    sales: 838,
+    rating: 4.7,
+    stock: 35,
+    isHot: true
+  },
+  {
+    id: 5,
+    name: "联想Y9000P",
+    price: 9499,
+    originalPrice: 10999,
+    image: "/images/5.jpg",
+    sales: 666,
+    rating: 4.6,
+    stock: 66,
+    isHot: true
+  }, {
+    id: 6,
+    name: "X1Carbon",
+    price: 4899,
+    originalPrice: 5599,
+    image: "/images/6.jpg",
+    sales: 623,
+    rating: 4.8,
+    stock: 12,
+    isHot: false
+  }, {
+    id: 7,
+    name: "联想小新YOGA Air14s骁龙",
+    price: 9999,
+    image: "/images/7.jpg",
+    sales: 665,
+    rating: 4.1,
+    stock: 45,
+    isHot: false
+  }, {
+    id: 8,
+    name: "联想THinkBook16Pro",
+    price: 5499,
+    originalPrice: 6999,
+    image: "/images/8.jpg",
+    sales: 888,
+    rating: 4.8,
+    stock: 88,
+    isHot: true
+  }, {
+    id: 9,
+    name: "联想THinkPadT14sAI2024",
+    price: 11999,
+    image: "/images/9.jpg",
+    sales: 60,
+    rating: 3.7,
+    stock: 30,
+    isHot: false
+  }, {
+    id: 10,
+    name: "联想小新YOGA",
+    price: 4999,
+    image: "/images/10.jpg",
+    sales: 606,
+    rating: 4.7,
+    stock: 80,
+    isHot: true
+  },
+];
 
 // 商品列表接口
 app.get('/api/products', (req, res) => {
