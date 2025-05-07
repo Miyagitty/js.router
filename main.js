@@ -180,6 +180,16 @@ app.post('/api/uploads', upload.single("avatar"), function (req, res) {
     }
 })
 
+
+app.post('/api/login', function (req, res) {
+    const { username, password } = req.body;
+    if (username === 'lisenguang' && password === '123456') {
+        res.send({ ok: 200, message: '登录成功', token: username + '36' });
+    } else {
+        res.status(401).send({ ok: 401, message: '用户名或密码错误' });
+    }
+});
+
 // 在已有配置中添加（放在其他静态资源之后）
 app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
 
