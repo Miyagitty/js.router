@@ -1,6 +1,7 @@
 var express = require('express');
 const cors = require('cors');
 var app = express();
+const mysql2 = require("mysql2")
 
 // 使用 cors 中间件
 app.use(cors());
@@ -11,7 +12,7 @@ app.use(express.json())
 const path = require('path')
 
 //引入multer
-const multer = require('multer')
+const multer = require('multer');
 // 1. 配置Multer存储
 const storage = multer.diskStorage({
     destination: (req, file, cb) => {
@@ -180,10 +181,14 @@ app.post('/api/uploads', upload.single("avatar"), function (req, res) {
     }
 })
 
+const config = getDBConfig();
+const promisePool = mysql2.createPool(config).promise();
 
-app.post('/api/login', function (req, res) {
-    const { username, password } = req.body;
-    if (username === 'lisenguang' && password === '123456') {
+app.post('/api/login', async function (req, res) {
+    let { username, password } = req.body;
+
+    const [users] = await promisePool.query('SELECT * FROM students WHERE name = ? AND password = ?', [username, password]);
+    if (users.length) {
         res.send({ ok: 200, message: '登录成功', token: username + '36' });
     } else {
         res.status(401).send({ ok: 401, message: '用户名或密码错误' });
@@ -204,3 +209,15 @@ app.get('/api/users', function (req, res) {
 app.listen(3000, () => {
     console.log("server start")
 })
+
+function getDBConfig() {
+    return {
+        host: '127.0.0.1',
+        port: 3306,
+        user: "root",
+        password: "123456",
+        database: "kerwin_test",
+        connectionLimit: 1,
+        charset: 'utf8_general_ci' // 指定客户端字符集
+    }
+}
